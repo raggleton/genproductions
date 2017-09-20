@@ -94,6 +94,7 @@ do
     process="${file%.*}"
     echo "compiling $process"
     echo ${PWD}
+    eval `scramv1 runtime -sh`
     echo "python ./run_pwg.py -p 0 -i powheg.input -m ${process} -f my_${process} -d 1"
     python ./run_pwg.py -p 0 -i powheg.input -m ${process} -f my_${process} -d 1
     echo "=========== LAST 10 COMPILATION LINES FOR PROCESS ${process} ===========" >> ${topdir}/compile_report_-_${source_name}_-_${scram_arch_version}_-_${cmssw_version}.log
