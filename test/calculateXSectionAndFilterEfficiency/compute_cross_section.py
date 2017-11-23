@@ -68,13 +68,19 @@ if __name__ == "__main__":
     else:
         # search dataset name as name + campaign + datatier
         primary_dataset_name = args.inputdataset.split('/')[1]
-        command="/cvmfs/cms.cern.ch/common/das_client --limit=0 --query=\"dataset dataset=/"+primary_dataset_name+"/*"+args.campaign+"*/"+args.datatier+"\""
-        dataset_used = commands.getstatusoutput(command)[1].split("\n")
-        if debug: print 'command',command,'\n'
-        dataset_used = [x.strip() for x in dataset_used][0]
+        if not (args.campaign in args.inputdataset and args.datatier in args.inputdataset):
+            command="/cvmfs/cms.cern.ch/common/das_client --limit=0 --query=\"dataset dataset=/"+primary_dataset_name+"/*"+args.campaign+"*/"+args.datatier+"\""
+            dataset_used = commands.getstatusoutput(command)[1].split("\n")
+            if debug: print 'command',command,'\n'
+            dataset_used = [x.strip() for x in dataset_used][0]
+        else:
+            dataset_used = args.inputdataset
     
-    if skipexisting and os.path.isfile("xsec_"+primary_dataset_name+".log"): 
-        print "xsec_"+primary_dataset_name+".log existing and NO skipexisting asked, skipping"
+    if debug: print 'dataset_used',dataset_used
+    
+    os.system("mkdir -p xsec")
+    if skipexisting and os.path.isfile("xsec/xsec_"+primary_dataset_name+".log"): 
+        print "xsec/xsec_"+primary_dataset_name+".log existing and NO skipexisting asked, skipping"
         # sys.exit(0)
     else:
         if debug: print 'dataset_used',dataset_used
@@ -84,10 +90,13 @@ if __name__ == "__main__":
         # retrieve filelist
         command="/cvmfs/cms.cern.ch/common/das_client --limit=100 --query=\"file dataset="+dataset_used+"\" "
         if debug: print 'command',command
-        filelist_used = "/store"+commands.getstatusoutput(command)[1].replace("\n",",").split("/store",1)[1] 
+        if len(commands.getstatusoutput(command)[1].replace("\n",",").split("/store",1))>0: 
+            filelist_used = "/store"+commands.getstatusoutput(command)[1].replace("\n",",").split("/store",1)[1] 
+        else:
+            filelist_used = "NULL"
         if debug: 
             print 'filelist_used',filelist_used.split(',')[0]
             filelist_used = filelist_used.split(',')[0]
         # compute cross section
-        command = 'cmsRun genXsec_cfg.py inputFiles=\"'+filelist_used+'\" maxEvents='+str(args.events)+" 2>&1 | tee xsec_"+primary_dataset_name+".log"
+        command = 'cmsRun genXsec_cfg.py inputFiles=\"'+filelist_used+'\" maxEvents='+str(args.events)+" 2>&1 | tee xsec/xsec_"+primary_dataset_name+".log"
         print command
